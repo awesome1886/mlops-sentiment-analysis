@@ -9,16 +9,22 @@
 #    (required on Linux where host.docker.internal is not resolved automatically)
 # Documentation: https://docs.docker.com/compose/compose-file/
 
+version: '3.8'
+
 services:
-
   api:
-    build: 
+    build: .
     ports:
-
+      - "8000:8000"
     env_file:
-      
+      - .env
     volumes:
-
+      - ./mlruns:/workspace/mlruns
+      - ./mlartifacts:/workspace/mlartifacts
     extra_hosts:
-      
+      - "host.docker.internal:host-gateway"
     healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

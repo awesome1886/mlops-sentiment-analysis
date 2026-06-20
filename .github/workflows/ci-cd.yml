@@ -8,26 +8,11 @@
 # 4. deploy        — render the ECS task definition with the new image and deploy to ECS Fargate
 # Documentation: https://docs.github.com/en/actions/writing-workflows
 
-name: test-and-deploy
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
-
-# TODO (Task 5)
-# Before running this pipeline, make sure you have created the following AWS resources:
-# 1. An ECR repository named finbert-api to store your Docker images
-# 2. An ECS cluster named finbert-cluster
-# 3. An ECS service named finbert-api-service running on that cluster
-# 4. An ECS task definition named finbert-api
-# Also add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN,
-# AWS_REGION, and ECR_REGISTRY as GitHub repository secrets.
-env:
-  ECR_REPOSITORY: finbert-api
-  TASK_DEFINITION: finbert-api
-  CONTAINER_NAME: finbert-api
-  ECS_SERVICE: finbert-api-service
-  ECS_CLUSTER: finbert-api
+    branches: [ main ]
 
 jobs:
   lint:
@@ -36,63 +21,90 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: pip install ruff
-      - run: ruff check app/ scripts/ tests/
+          python-version: '3.12'
+      - run: pip install flake8
+      - run: flake8 app/ scripts/
 
-  # TODO (Task 5) — test job
-  # Steps:
-  # - Checkout the code and setup Python (3.12)
-  # - Install dependencies
-  # - Run integration test using the HuggingFace model as MODEL_SOURCE
-  # Nice-to-have:
-  # - Cache pip dependencies to avoid re-installing on every run
-  # - Cache the HuggingFace model to avoid re-downloading on every run
   test:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        env:
+          MODEL_SOURCE: huggingface
+        run: pytest tests/
 
-
-  # TODO (Task 5) — deepchecks job
-  # Steps:
-  # - Checkout the code and setup Python (3.12)
-  # - Install dependencies
-  # - Generate data by running dvc repro (set HF_DATASET_ID env var)
-  # - Run deepchecks script using the HugginFace model as MODEL_ENV
-  # Nice-to-have:
-  # - Cache pip dependencies to avoid re-installing on every run
-  # - Cache the HuggingFace model to avoid re-downloading on every run
   deepchecks:
     runs-on: ubuntu-latest
-    needs: lint
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Deepchecks
+        env:
+          MODEL_SOURCE: huggingface
+        run: python scripts/run_deepchecks.py
 
-
-  # TODO (Task 5) — build job
-  # Steps:
-  # 1. Checkout the code
-  # 2. Configure AWS credentials using repository secrets
-  #    (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION)
-  # 3. Log in to Amazon ECR
-  # 4. Build the Docker image
-  # 5. Tag it with a unique tag combining the short commit SHA and a timestamp
-  # 6. Push both the unique tag and the :latest tag to ECR
   build:
-    name: Build and Push to ECR
-    runs-on: ubuntu-latest
     needs: [test, deepchecks]
-    steps:
-
-
-  # TODO (Task 5) — deploy job
-  # Steps:
-  # 1. Configure AWS credentials (same secrets as build job)
-  # 2. Download the current ECS task definition using the AWS CLI
-  # 3. Render a new task definition revision with the updated image URI
-  # 4. Deploy the new task definition to the ECS service and wait for stability
-  deploy:
     runs-on: ubuntu-latest
-    needs: build
     steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: finbert-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
 
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition finbert-api --query taskDefinition > task-definition.json
+          
+      - name: Render Amazon ECS task definition
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: finbert-api
+          image: ${{ secrets.ECR_REGISTRY }}/finbert-api:${{ github.sha }}
+          
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: finbert-api-service
+          cluster: finbert-cluster
+          wait-for-service-stability: true
