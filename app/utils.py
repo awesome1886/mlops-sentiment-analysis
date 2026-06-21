@@ -25,6 +25,8 @@ def load_classifier():
             model=hf_model_id,
             tokenizer=hf_model_id,
             device="cpu",
+            id2label={"0": "0", "1": "1", "2": "2"},
+            label2id={"0": 0, "1": 1, "2": 2}
         )
 
     import mlflow.transformers
