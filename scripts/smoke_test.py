@@ -49,8 +49,14 @@ def check_model():
             model=model_id,
             tokenizer=model_id,
         )
-        result = classifier("The company reported record profits this quarter.")
-        assert result and result[0]["label"] in {"positive", "negative", "neutral"}
+        result = classifier(
+            "The company reported record profits this quarter."
+        )
+        assert result and result[0]["label"] in {
+            "positive",
+            "negative",
+            "neutral",
+        }
         print(f"Model loaded and inference OK  -->  {result[0]}")
         return True
     except Exception as e:

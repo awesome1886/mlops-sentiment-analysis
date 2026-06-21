@@ -34,4 +34,6 @@ def load_classifier():
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
     print(f"Loading model from MLflow: models:/{model_name}@{model_alias}")
     mlflow.set_tracking_uri(tracking_uri)
-    return mlflow.transformers.load_model(f"models:/{model_name}@{model_alias}")
+    return mlflow.transformers.load_model(
+        f"models:/{model_name}@{model_alias}"
+    )
