@@ -20,17 +20,13 @@ def load_classifier():
     if model_source == "huggingface":
         hf_model_id = os.getenv("HF_MODEL_ID", "baptle/FinBERT_market_based")
         print(f"Loading model from HuggingFace: {hf_model_id}")
-    from huggingface_hub import hf_hub_download
-        import json
-
-        config_path = hf_hub_download(repo_id=hf_model_id, filename="config.json")
-        with open(config_path, "r") as f:
-            config_dict = json.load(f)
-
-        config_dict["id2label"] = {"0": "0", "1": "1", "2": "2"}
-        config_dict["label2id"] = {"0": 0, "1": 1, "2": 2}
-        
-        hf_config = AutoConfig.from_dict(config_dict)
+    
+    # Passing id2label and label2id directly overrides the invalid config.json automatically
+        hf_config = AutoConfig.from_pretrained(
+            hf_model_id,
+            id2label={"0": "0", "1": "1", "2": "2"},
+            label2id={"0": 0, "1": 1, "2": 2}
+        )
 
         return pipeline(
             "text-classification",
@@ -38,8 +34,7 @@ def load_classifier():
             tokenizer=hf_model_id,
             config=hf_config,
             device="cpu"
-        ) 
-
+        )
     import mlflow.transformers
 
     model_name = os.getenv("MODEL_NAME", "finbert")
