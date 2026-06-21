@@ -3,28 +3,21 @@ Model loading utilities.
 """
 
 import os
-
+import json
+import tempfile
 from transformers import pipeline, AutoConfig
-
+from huggingface_hub import hf_hub_download
 
 def load_classifier():
     """
     Load the sentiment classifier.
-
-    Controlled by the MODEL_SOURCE environment variable:
-      - "mlflow" (default) — loads from the MLflow Model Registry
-      - "huggingface"       — loads directly from HuggingFace Hub (used in CI/prod)
+    ...
     """
     model_source = os.getenv("MODEL_SOURCE", "mlflow")
 
     if model_source == "huggingface":
         hf_model_id = os.getenv("HF_MODEL_ID", "baptle/FinBERT_market_based")
         print(f"Loading model from HuggingFace: {hf_model_id}")
-
-        from huggingface_hub import hf_hub_download
-        import json
-        import tempfile
-        import os
 
         # 1. Download raw config
         config_path = hf_hub_download(repo_id=hf_model_id, filename="config.json")
@@ -40,7 +33,7 @@ def load_classifier():
             tmp_config_path = os.path.join(tmp_dir, "config.json")
             with open(tmp_config_path, "w") as f:
                 json.dump(config_dict, f)
-        
+            
             hf_config = AutoConfig.from_pretrained(tmp_dir)
 
         return pipeline(
@@ -50,8 +43,10 @@ def load_classifier():
             config=hf_config,
             device="cpu"
         )
+    
+    # (Ensure no hidden spaces on any blank lines below this point!)
     import mlflow.transformers
-
+    
     model_name = os.getenv("MODEL_NAME", "finbert")
     model_alias = os.getenv("MODEL_STAGE", "production")
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
