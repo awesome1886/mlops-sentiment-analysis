@@ -26,11 +26,11 @@ def load_classifier():
             with open(tmp_config_path, "w") as f:
                 json.dump(config_dict, f)
             hf_config = AutoConfig.from_pretrained(tmp_dir)
-        
+
         # Pass the patched config to the tokenizer to stop it from fetching the bad one!
         tokenizer = AutoTokenizer.from_pretrained(hf_model_id, config=hf_config)
         model = AutoModelForSequenceClassification.from_pretrained(hf_model_id, config=hf_config)
-        
+
         return pipeline(
             "text-classification",
             model=model,
@@ -44,3 +44,4 @@ def load_classifier():
     print(f"Loading model from MLflow: models:/{model_name}@{model_alias}")
     mlflow.set_tracking_uri(tracking_uri)
     return mlflow.transformers.load_model(f"models:/{model_name}@{model_alias}")
+    
