@@ -44,4 +44,3 @@ def load_classifier():
     print(f"Loading model from MLflow: models:/{model_name}@{model_alias}")
     mlflow.set_tracking_uri(tracking_uri)
     return mlflow.transformers.load_model(f"models:/{model_name}@{model_alias}")
-    
