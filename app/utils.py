@@ -4,7 +4,7 @@ Model loading utilities.
 
 import os
 
-from transformers import pipeline
+from transformers import pipeline, AutoConfig
 
 
 def load_classifier():
@@ -20,15 +20,18 @@ def load_classifier():
     if model_source == "huggingface":
         hf_model_id = os.getenv("HF_MODEL_ID", "baptle/FinBERT_market_based")
         print(f"Loading model from HuggingFace: {hf_model_id}")
+        hf_config = AutoConfig.from_pretrained(
+            hf_model_id,
+            id2label={"0": "0", "1": "1", "2": "2"},
+            label2id={"0": 0, "1": 1, "2": 2}
+        )
+
         return pipeline(
             "text-classification",
             model=hf_model_id,
             tokenizer=hf_model_id,
-            device="cpu",
-            model_kwargs={
-                "id2label": {"0": "0", "1": "1", "2": "2"},
-                "label2id": {"0": 0, "1": 1, "2": 2}
-            }
+            config=hf_config,
+            device="cpu"
         )
 
     import mlflow.transformers
