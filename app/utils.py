@@ -4,8 +4,7 @@ Model loading utilities.
 import os
 import json
 import tempfile
-from transformers import pipeline, AutoConfig, AutoTokenizer
-from transformers import AutoModelForSequenceClassification
+from transformers import pipeline, AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 from huggingface_hub import hf_hub_download
 
 
@@ -27,8 +26,11 @@ def load_classifier():
             with open(tmp_config_path, "w") as f:
                 json.dump(config_dict, f)
             hf_config = AutoConfig.from_pretrained(tmp_dir)
-        tokenizer = AutoTokenizer.from_pretrained(hf_model_id)
+        
+        # Pass the patched config to the tokenizer to stop it from fetching the bad one!
+        tokenizer = AutoTokenizer.from_pretrained(hf_model_id, config=hf_config)
         model = AutoModelForSequenceClassification.from_pretrained(hf_model_id, config=hf_config)
+        
         return pipeline(
             "text-classification",
             model=model,
