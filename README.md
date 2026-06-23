@@ -213,5 +213,9 @@ I have included a `screenshot/` folder in the root directory with proof of my su
 ### 2. Live FastAPI Prediction (Swagger UI)
 <img src="screenshot/FastAPI Prediction-1.png" width="800">
 
+<img src="screenshot/FastAPI Prediction-2.png" width="800">
+
+<img src="screenshot/FastAPI Prediction-3.png" width="800">
+
 ### 3. AWS ECS Task Running Live
 <img src="screenshot/AWS ECS Running Task.png" width="800">
