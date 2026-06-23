@@ -101,7 +101,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: finbert-api
-          # KEEP YOUR EXISTING 'image:' LINE HERE!
+          image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}   # <--- THIS IS THE MISSING LINE!
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
