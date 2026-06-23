@@ -104,9 +104,9 @@ jobs:
           image: ${{ secrets.ECR_REGISTRY }}/finbert-api:${{ github.sha }}
 
       - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2   # <--- CHANGE THIS FROM @v1 to @v2
         with:
-          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: finbert-api-service
           cluster: finbert-cluster
           wait-for-service-stability: true
