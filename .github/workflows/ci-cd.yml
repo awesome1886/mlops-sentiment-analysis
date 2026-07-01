@@ -39,6 +39,7 @@ jobs:
         env:
           MODEL_SOURCE: huggingface
           HF_MODEL_ID: baptle/FinBERT_market_based
+          HF_DATASET_ID: baptle/financial_headlines_market_based
         run: pytest tests/
 
   deepchecks:
@@ -52,11 +53,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Generate data with DVC
+        env:
+          HF_DATASET_ID: baptle/financial_headlines_market_based
         run: dvc repro
       - name: Run Deepchecks
         env:
           MODEL_SOURCE: huggingface
           HF_MODEL_ID: baptle/FinBERT_market_based
+          HF_DATASET_ID: baptle/financial_headlines_market_based
         run: python scripts/run_deepchecks.py
 
   build:
