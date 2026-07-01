@@ -90,7 +90,7 @@ def main():
         window_idx = 0
         
         # 3. Loop through headlines
-        for text in df['headline']:
+        for text in df['text']:
             time.sleep(SLEEP_MS / 1000.0)  # simulate real traffic delay
             
             try:
