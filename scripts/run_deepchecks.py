@@ -48,7 +48,6 @@ def main():
 
     print("Loading production model...")
     # Force HuggingFace model source for this check
-    os.environ["MODEL_SOURCE"] = "huggingface"
     classifier = load_classifier()
 
     stream_df = pd.read_csv("data/stream.csv")

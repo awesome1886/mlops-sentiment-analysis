@@ -42,7 +42,7 @@ def log(level: str, message: str, **kwargs) -> None:
         "message": message,
         **kwargs,
     }
-    print(json.dumps(log_entry))
+    logger.info(json.dumps(log_entry))
 
 
 # Define Prometheus metrics
@@ -52,7 +52,8 @@ PREDICTION_REQUESTS = Counter(
     ["sentiment"],
 )
 PREDICTION_LATENCY = Histogram(
-    "prediction_latency_ms", "Prediction latency in milliseconds"
+    "prediction_latency_ms", "Prediction latency in milliseconds",
+    buckets=[10, 50, 100, 250, 500, 1000, 2000, 5000]
 )
 PREDICTION_ERRORS = Counter(
     "prediction_errors_total", "Total number of prediction errors"
@@ -104,13 +105,13 @@ def run_predictions(texts: list[str]) -> list[PredictionResult]:
         start_time = time.time()
         predictions = classifiers["sentiment"](texts)
         latency_ms = (time.time() - start_time) * 1000
+        PREDICTION_LATENCY.observe(latency_ms)
 
         results = []
         for text, pred in zip(texts, predictions):
             sentiment = pred["label"]
             confidence = pred["score"]
 
-            PREDICTION_LATENCY.observe(latency_ms)
             PREDICTION_REQUESTS.labels(sentiment=sentiment).inc()
             log(
                 "INFO",

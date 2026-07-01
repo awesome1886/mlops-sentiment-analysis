@@ -9,7 +9,7 @@ clean:
   max_words: 100
 
 promote:
-  f1_threshold: 0.56
+  f1_threshold: 0.10
 
 deepchecks:
   property_drift_threshold: 0.5

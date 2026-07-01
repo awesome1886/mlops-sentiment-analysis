@@ -19,8 +19,8 @@ def load_classifier():
         config_path = hf_hub_download(repo_id=hf_model_id, filename="config.json")
         with open(config_path, "r") as f:
             config_dict = json.load(f)
-        config_dict["id2label"] = {"0": "0", "1": "1", "2": "2"}
-        config_dict["label2id"] = {"0": 0, "1": 1, "2": 2}
+        config_dict["id2label"] = {"0": "positive", "1": "negative", "2": "neutral"}
+        config_dict["label2id"] = {"positive": 0, "negative": 1, "neutral": 2}
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_config_path = os.path.join(tmp_dir, "config.json")
             with open(tmp_config_path, "w") as f:
